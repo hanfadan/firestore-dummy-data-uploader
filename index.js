@@ -7,25 +7,41 @@ admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
 
 const db = admin.firestore();
 
-const collection = "posts"; // Your collection name
-const ndocs = 20; // Number of dummy posts
+const collection = "posts"; // Nama koleksi Anda
+const ndocs = 10; // Jumlah dokumen dummy
 
-console.log("Uploading dummy data. . .")
+console.log("Mengunggah data dummy...");
 
 const bar = new cliProgress.SingleBar({}, cliProgress.Presets.shades_classic);
 bar.start(ndocs, 0);
 
 for (let i = 0; i < ndocs; i++) {
+  const storeName = generateRandomStoreName();
+  const docRef = db.collection(collection).doc(storeName);
   const obj = {
-    context: randomWords({ min: 10, max: 30, join: " " }),
-    user: randomWords({ exactly: 2, join: " " }),
+    now: getRandomNumber(1, 50),
+    new: getRandomNumber(1, 50),
+    packing: getRandomNumber(1, 50),
+    process: getRandomNumber(1, 50),
+    selesai: getRandomNumber(1, 50),
     timestamp: admin.firestore.FieldValue.serverTimestamp(),
   };
-  db.collection(collection)
-    .doc()
-    .set(obj);
+  docRef.set(obj);
 
   bar.update(1);
 }
 bar.stop();
-console.log("Upload complete!")
+console.log("Pengunggahan selesai!");
+
+function generateRandomStoreName() {
+  const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  let result = "";
+  for (let i = 0; i < 4; i++) {
+    result += characters.charAt(Math.floor(Math.random() * characters.length));
+  }
+  return result;
+}
+
+function getRandomNumber(min, max) {
+  return Math.floor(Math.random() * (max - min + 1) + min);
+}
