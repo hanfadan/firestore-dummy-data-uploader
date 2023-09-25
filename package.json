@@ -25,5 +25,8 @@
     "cli-progress": "^3.6.0",
     "firebase-admin": "^8.10.0",
     "random-words": "^1.1.0"
+  },
+  "devDependencies": {
+    "@faker-js/faker": "^8.0.2"
   }
 }
