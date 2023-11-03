@@ -10,14 +10,14 @@ const orderCollection = "orders";
 const storeCollection = "stores";
 
 async function updateStoreStatus(orderData) {
-  const storeRef = db.collection(storeCollection).doc(orderData.payload.storeName);
+  const storeRef = db.collection(storeCollection).doc(orderData.storeName);
 
   const storeSnapshot = await storeRef.get();
 
   let storeStatus;
   if (storeSnapshot.exists) {
     storeStatus = storeSnapshot.data();
-    switch (orderData.payload.sapaStatus) {
+    switch (orderData.sapaStatus) {
       case 1101:
         storeStatus.new += 1;
         break;
@@ -38,18 +38,18 @@ async function updateStoreStatus(orderData) {
     }
   } else {
     storeStatus = {
-      storeName: orderData.payload.storeName,
-      new: orderData.payload.sapaStatus === 1101 ? 1 : 0,
-      packing: orderData.payload.sapaStatus === 1102 ? 1 : 0,
-      process: orderData.payload.sapaStatus === 1103 ? 1 : 0,
-      selesai: orderData.payload.sapaStatus === 1104 ? 1 : 0,
-      cancel: orderData.payload.sapaStatus === 1105 ? 1 : 0,
+      storeName: orderData.storeName,
+      new: orderData.sapaStatus === 1101 ? 1 : 0,
+      packing: orderData.sapaStatus === 1102 ? 1 : 0,
+      process: orderData.sapaStatus === 1103 ? 1 : 0,
+      selesai: orderData.sapaStatus === 1104 ? 1 : 0,
+      cancel: orderData.sapaStatus === 1105 ? 1 : 0,
       timestamp: admin.firestore.FieldValue.serverTimestamp(),
     };
   }
 
   await storeRef.set(storeStatus);
-  console.log(`Store status for ${orderData.payload.storeName} uploaded/updated.`);
+  console.log(`Store status for ${orderData.storeName} uploaded/updated.`);
 }
 
 function generateStoreName() {
@@ -103,43 +103,43 @@ function createOrderData(storeNames) {
     // Memilih nama toko secara acak dari array storeNames
     const randomStoreName = storeNames[Math.floor(Math.random() * storeNames.length)];
   return {
-    payload: {
+    // orderList: {
       shipmentNumber: shipmentNumber,
-      price: faker.commerce.price(),
-      intendedReceiver: faker.person.fullName(),
-      orderDate: orderDate,
-      estimatedDeliveryDate: estimatedDeliveryDate,
-      deliverySlotDesc: faker.date.soon({ days: 1, refDate: estimatedDeliveryDate }),
-      deliveryTimeSlot: "",
+      price: parseFloat(faker.commerce.price()),
+      intendedReceiver: faker.person.firstName(),
+      orderDate: orderDate.toISOString(),
+      estimatedDeliveryDate: estimatedDeliveryDate.toISOString().split('T')[0],
+      deliverySlotDesc: faker.date.soon({ days: 1, refDate: estimatedDeliveryDate }).toISOString(),
+      deliveryTimeSlot: `${faker.date.soon().getHours()}:00 - ${faker.date.soon().getHours() + 1}:00`,
       isSendStore: faker.helpers.arrayElement(["T", "F"]),
       appId: faker.helpers.arrayElement([379, 402, 1500, 91, 95, 396, 415, 92, 330, 335]),
       app: faker.helpers.arrayElement(["ALFAGIFT", "GRABMART", "ALFAMIND", "ALFAMIKRO", "GOMART"]),
       deliveryType: faker.helpers.arrayElement(["Dikirim", "Diambil di toko"]),
-      deliveryTypeId: faker.string.numeric({ min: 0, max: 5 }),
-      deliveryMethod: faker.string.numeric({ min: 0, max: 2 }),
-      timer: faker.string.numeric({ min: 3600, max: 86400 }),
-      updateStoreStatusdeliveryKecamatan: faker.location.city(),
+      deliveryTypeId: faker.string.alphanumeric(1),
+      deliveryMethod: faker.string.alphanumeric(1),
+      timer: parseInt(faker.string.numeric({ min: 3600, max: 86400 })),
+      deliveryKecamatan: faker.location.country(),
       paymentName: faker.finance.transactionType(),
-      paymentId: faker.string.numeric({ min: 1, max: 30 }),
-      shipmentStatus: faker.string.numeric({ min: 1, max: 40 }),
+      paymentId: parseInt(faker.string.numeric({ min: 1, max: 30 })),
+      shipmentStatus: parseInt(faker.string.numeric({ min: 1, max: 40 })),
       sapaStatus: faker.helpers.arrayElement([1101, 1102, 1103, 1104, 1105]),
       orderNumber: orderNumber,
-      receivedDate: "",
-      receivedTime: "",
-      orderDateGroup: "",
+      receivedDate: orderDate.toISOString().split('T')[0],
+      receivedTime: `${orderDate.getHours()}:${orderDate.getMinutes()}`,
+      orderDateGroup: orderDate.toISOString().split('T')[0],
       deliveryKelurahan: faker.location.state(),
-      returRefundID: 0,
+      returRefundID: faker.helpers.arrayElement([1101, 1102, 1103, 1104, 1105, 1106, 1107]),
       returRefundStatus: 0,
-      flagVipMember: faker.helpers.arrayElement([0, 1]),
-      flagNewMember: faker.helpers.arrayElement([true, false]),
-      matStatus: 0,
-      matNo: "",
+      flagVipMember: faker.helpers.arrayElement(["T", "F"]),
+      flagNewMember: faker.datatype.boolean(0,1),
       flexiTimeDesc: "",
-      isDeliveryFlexiTime: faker.helpers.arrayElement([0, 1]),
+      isDeliveryFlexiTime: parseInt(faker.helpers.arrayElement([0, 1])),
+      tsfdCreatedDate: orderDate.toISOString(),
+      tsfdUpdatedDate: faker.date.recent().toISOString(),
+      flexiTimeBegin: `${faker.date.soon().getHours()}:00`,
+      isPreorder: parseInt(faker.helpers.arrayElement([0, 1])),
       storeName: randomStoreName,
-    },
-    code: 200,
-    message: "Success",
+    // },
   };
 }
 
@@ -147,9 +147,9 @@ async function uploadOrders(n, storeNames) {
   for (let i = 0; i < n; i++) {
     const orderData = createOrderData(storeNames);
 
-    const orderRef = db.collection(orderCollection).doc(orderData.payload.shipmentNumber);
+    const orderRef = db.collection(orderCollection).doc(orderData.shipmentNumber);
     await orderRef.set(orderData);
-    console.log(`Order ${orderData.payload.shipmentNumber} uploaded.`);
+    console.log(`Order ${orderData.shipmentNumber} uploaded.`);
 
     await updateStoreStatus(orderData);
   }
@@ -159,7 +159,7 @@ async function uploadOrders(n, storeNames) {
 async function main() {
   try {
     const storeNames = await generateStores(1);
-    await uploadOrders(10, storeNames);
+    await uploadOrders(100, storeNames);
   } catch (error) {
     console.error("Terjadi kesalahan:", error);
   }
